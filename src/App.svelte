@@ -1,10 +1,14 @@
 <script>
-	let line1 = "Lorem ipsum dolor sit amet consectetur adipisicing elit. Maiores nihil facilis dolores ipsam blanditiis dicta.";
+	let line1 = "Lorem ipsum dolor sit amet con sectetur adipisicing elit. Maiores nihil facilis dolores ipsam blanditiis dicta.";
 	let line2 = "Dolorem repellendus impedit aliquam!";
 
 	let userInput = "Your piece of the story!";
+	const handleInput = (ev) => {
+		userInput = ev.target.value.replaceAll(/[^A-Za-z0-9.,!?"\- ]/g, "");
+	};
+
 	const maxCharacters = 180;
-	$: counterColor = userInput.length > maxCharacters * 0.9 ? "red" : "unset";
+	$: counterColor = userInput.length >= maxCharacters - 10 ? "red" : "unset";
 </script>
 
 <main>
@@ -17,8 +21,11 @@
 				<cite>{line2}</cite>
 				<cite>{line1}</cite>
 				<div>
-					<textarea type="text" bind:value={userInput} />
-					<div style="color: {counterColor}">{userInput.length} / {maxCharacters}</div>
+					<textarea type="text" bind:value={userInput} on:input={handleInput} />
+					<div id="submit-region">
+						<div style="color: {counterColor}">{userInput.length} / {maxCharacters}</div>
+						<input type="submit" value="Submit!" />
+					</div>
 				</div>
 			</blockquote>
 		</form>
@@ -36,7 +43,7 @@
 		--padding: 24px;
 		padding: var(--padding);
 
-		max-width: 60%;
+		max-width: 50%;
 		text-align: left;
 	}
 	blockquote *:not(:first-child) {
@@ -63,5 +70,12 @@
 		max-width: 100%;
 		border-left: 8px solid gainsboro;
 		padding-left: 8px;
+	}
+	#submit-region * {
+		display: inline-block;
+		margin-top: 0;
+	}
+	#submit-region input {
+		float: right;
 	}
 </style>

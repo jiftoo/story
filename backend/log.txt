@@ -1,0 +1,21 @@
+2022-05-16T19:49:45.091Z(LOG): Listening on :: 80
+2022-05-16T19:49:45.094Z(LOG): db open, 1 lines
+2022-05-16T19:49:47.485Z(LOG): connection
+2022-05-16T19:50:15.447Z(LOG): Listening on :: 80
+2022-05-16T19:50:15.451Z(LOG): db open, 1 lines
+2022-05-16T19:50:17.841Z(LOG): connection
+2022-05-16T19:55:32.161Z(LOG): Listening on :: 80
+2022-05-16T19:55:32.164Z(LOG): db open, 1 lines
+2022-05-16T19:55:34.558Z(LOG): connection 
+2022-05-16T19:56:05.242Z(LOG): Listening on :: 80
+2022-05-16T19:56:05.245Z(LOG): db open, 1 lines
+2022-05-16T19:56:07.636Z(LOG): connection [object Object]
+2022-05-16T19:56:12.112Z(LOG): Listening on :: 80
+2022-05-16T19:56:12.115Z(LOG): db open, 1 lines
+2022-05-16T19:56:14.504Z(LOG): connection ::ffff:192.168.0.200
+2022-05-16T19:56:52.647Z(LOG): Listening on :: 80
+2022-05-16T19:56:52.650Z(LOG): db open, 1 lines
+2022-05-16T19:56:55.099Z(LOG): connection ::ffff:192.168.0.200 
+2022-05-16T19:58:51.397Z(LOG): Listening on :: 80
+2022-05-16T19:58:51.402Z(LOG): db open, 1 lines
+2022-05-16T19:58:54.166Z(LOG): connection ::ffff:192.168.0.200 

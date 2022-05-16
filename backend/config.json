@@ -1,0 +1,7 @@
+{
+    "port": 80,
+    "bookDuration": 180000,
+    "submitTimeout": 10800000,
+    "bookTimeout": 1800000,
+    "logFile": "log.txt"
+}

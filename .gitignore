@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+backend/adminHash.txt
+backend/db.txt.bak
+backend/db.txt
+backend/a.txt

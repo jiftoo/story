@@ -207,6 +207,14 @@
 		<p>TODO: add description</p>
 		<br />
 		<blockquote>
+			<div>
+				{#if timeoutSubmitUntil}
+					<div style="margin-top: 4px;">You can't submit new episodes until {new Date(timeoutSubmitUntil).toLocaleTimeString()}</div>
+				{/if}
+				{#if timeoutBookUntil}
+					<div style="margin-top: 4px;">You can't book until {new Date(timeoutBookUntil).toLocaleTimeString()}</div>
+				{/if}
+			</div>
 			{#if !adminActive}
 				{#each episodeArray as episode}
 					<cite>{episode}</cite>
@@ -229,14 +237,8 @@
 				<div id="submit-region">
 					{#if isConnected}
 						<div id="counter" style="color: {counterColor}; animation-name: {vibrate}">{userInput.length} / {maxCharacters}</div>
-						{#if timeoutSubmitUntil}
-							<div>You can't submit new episodes until {new Date(timeoutSubmitUntil).toLocaleTimeString()}</div>
-						{/if}
-						{#if timeoutBookUntil}
-							<div>You can't book until {new Date(timeoutBookUntil).toLocaleTimeString()}</div>
-						{/if}
-						<button type="submit" disabled={isBooked && !bookedForMe} on:click={handleSubmit}>Submit!</button>
-						<button disabled={isBooked} on:click={() => (showBookDialog = true)}>Book</button>
+						<button type="submit" disabled={(isBooked && !bookedForMe) || !!timeoutBookUntil} on:click={handleSubmit}>Submit!</button>
+						<button disabled={isBooked || !!timeoutBookUntil} on:click={() => (showBookDialog = true)}>Book</button>
 						{#if adminActive}
 							<button id="force-submit-btn" type="submit" on:click={handleForceSubmit}>Force submit</button>
 						{/if}

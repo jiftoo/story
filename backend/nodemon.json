@@ -1,0 +1,3 @@
+{
+	"ignore": ["./db.txt", "./db.txt.bak", "./ips.json"]
+}

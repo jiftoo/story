@@ -5,7 +5,7 @@
 	"main": "index.js",
 	"type": "module",
 	"scripts": {
-		"start": "nodemon index.js"
+		"start": "nodemon index.js --config ./nodemon.json"
 	},
 	"dependencies": {
 		"md5": "^2.3.0",

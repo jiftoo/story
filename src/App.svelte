@@ -3,8 +3,8 @@
 	import ConnectingSpinner from "./lib/ConnectingSpinner.svelte";
 	import WSErrors from "./lib/WSErrors";
 
-	const BACKEND_URL = "ws://217.15.202.178:8013/story";
-	// const BACKEND_URL = "ws://192.168.0.154";
+	// const BACKEND_URL = "ws://217.15.202.178:8013/story";
+	const BACKEND_URL = "ws://localhost";
 	// const BACKEND_URL = "ws://192.168.0.200";
 
 	let userInput = "";
@@ -49,6 +49,9 @@
 
 	let bookTimeConst = -1;
 
+	let timeoutSubmitUntil = null;
+	let timeoutBookUntil = null;
+
 	const connect = () => {
 		ws = new WebSocket(BACKEND_URL);
 		ws.addEventListener("message", (ev) => {
@@ -66,14 +69,23 @@
 							bookedFor -= 1000;
 						}, 1000);
 					}
+					if (msg.data.timeouts) {
+						timeoutSubmitUntil = msg.data.timeouts.submit;
+						timeoutBookUntil = msg.data.timeouts.book;
+						console.log(msg.data.timeouts);
+					}
 					break;
 				case "submitSuccess":
 					userInput = "";
+					timeoutSubmitUntil = msg.data.submit;
+					timeoutBookUntil = msg.data.book;
+
 					break;
 				case "bookSuccess":
 					isBooked = true;
 					bookedForMe = true;
-					bookId = msg.data;
+					bookId = msg.data.isBooked;
+					timeoutBookUntil = msg.data.timeout;
 					localStorage.setItem("st-bookid", bookId);
 					console.log("you booked", bookId);
 					break;
@@ -217,6 +229,12 @@
 				<div id="submit-region">
 					{#if isConnected}
 						<div id="counter" style="color: {counterColor}; animation-name: {vibrate}">{userInput.length} / {maxCharacters}</div>
+						{#if timeoutSubmitUntil}
+							<div>Submit timeout until {new Date(timeoutSubmitUntil).toLocaleTimeString()}</div>
+						{/if}
+						{#if timeoutBookUntil}
+							<div>Book timeout {new Date(timeoutBookUntil).toLocaleTimeString()}</div>
+						{/if}
 						<button type="submit" disabled={isBooked && !bookedForMe} on:click={handleSubmit}>Submit!</button>
 						<button disabled={isBooked} on:click={() => (showBookDialog = true)}>Book</button>
 						{#if adminActive}

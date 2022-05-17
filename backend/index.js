@@ -29,7 +29,7 @@ let config = {
 if (!fs.existsSync("config.json")) {
 	fs.writeFileSync("config.json", JSON.stringify(config, null, 4), {encoding: "utf-8"});
 } else {
-    let _cfg;
+	let _cfg;
 	try {
 		_cfg = JSON.parse(fs.readFileSync("config.json", {encoding: "utf-8"}));
 		if (!_cfg.port || !_cfg.bookDuration || !_cfg.submitTimeout || !_cfg.bookTimeout || !_cfg.logFile) {
@@ -40,7 +40,7 @@ if (!fs.existsSync("config.json")) {
 		console.error("malformed json in config");
 		exit(-1);
 	}
-    config = _cfg;
+	config = _cfg;
 }
 
 const wss = new WebSocketServer({port: config.port});
@@ -94,10 +94,21 @@ const checkHash = (pwd) => {
 };
 
 const broadcastUpdate = (bookId) => {
-	broadcast(wsMsg("update", {bookedForMe: bookId === isBooked && bookId != null, episodes, bookedFor: bookedUntil === null ? 0 : bookedUntil - Date.now()}, bookId));
+	broadcast(
+		wsMsg(
+			"update",
+			{
+				timeouts: null,
+				bookedForMe: bookId === isBooked && bookId != null,
+				episodes,
+				bookedFor: bookedUntil === null ? 0 : bookedUntil - Date.now(),
+			},
+			bookId
+		)
+	);
 };
 
-const unbook = () => {
+const unbook = (ip) => {
 	isBooked = false;
 	bookedTimer = null;
 	bookedUntil = null;
@@ -105,16 +116,91 @@ const unbook = () => {
 	console.log("no longer booked");
 };
 
+let timeoutedIps = {"1.1.1.1": {submit: true, book: true}};
+if (!fs.existsSync("ips.json")) {
+	fs.writeFileSync("ips.json", JSON.stringify(timeoutedIps, null, 4), {encoding: "utf-8"});
+}
+try {
+	timeoutedIps = JSON.parse(fs.readFileSync("ips.json", {encoding: "utf-8"}));
+} catch (_) {
+	console.log("malformed ips.json");
+	fs.writeFileSync("ips.json", JSON.stringify(timeoutedIps, null, 4), {encoding: "utf-8"});
+}
+
+const testIpTimeout = (ip, which) => {
+	if (timeoutedIps[ip] === undefined) {
+		return false;
+	}
+	if (which === "submit" || which === "book") {
+		return timeoutedIps[ip][which] ?? false;
+	}
+};
+
+const timeoutIp = (ip, options = {submit: false, book: false}) => {
+	if (timeoutedIps[ip] === undefined) {
+		timeoutedIps[ip] = {submit: false, book: false, submitUntil: null, bookUntil: null};
+	}
+	if (options.submit !== undefined) {
+		timeoutedIps[ip].submit = options.submit;
+		if (options.submit) {
+			timeoutedIps[ip].submitUntil = Date.now() + config.submitTimeout;
+		}
+	}
+	if (options.book !== undefined) {
+		timeoutedIps[ip].book = options.book;
+		if (options.book) {
+			timeoutedIps[ip].bookUntil = Date.now() + config.bookTimeout;
+		}
+	}
+	console.log("timed out", ip, options);
+	fs.writeFileSync("ips.json", JSON.stringify(timeoutedIps, null, 4), {encoding: "utf-8"});
+};
+
+// timeout looper
+setInterval(() => {
+	const entries = Object.entries(timeoutedIps);
+	entries.forEach(([ip, val]) => {
+		let changed = false;
+		if (val.submit && val.submitUntil < Date.now()) {
+			timeoutedIps[ip].submit = false;
+			timeoutedIps[ip].submitUntil = null;
+			changed = true;
+		}
+		if (val.book && val.bookUntil < Date.now()) {
+			timeoutedIps[ip].book = false;
+			timeoutedIps[ip].bookUntil = null;
+			changed = true;
+		}
+		if (changed) {
+			console.log("un timed out", timeoutedIps[ip]);
+			fs.writeFileSync("ips.json", JSON.stringify(timeoutedIps, null, 4), {encoding: "utf-8"});
+		}
+	});
+}, 1000);
+
 wss.on("connection", (ws, req) => {
-	console.log("connection", req.socket.remoteAddress, req.headers["x-forwarded-for"]);
+	const ip = req.headers["x-real-ip"] || req.socket.remoteAddress;
+	console.log("connection", req.socket.remoteAddress, ip);
 	ws.on("message", (ev) => {
 		const msg = JSON.parse(ev.toString());
 		switch (msg.type) {
 			case "get":
+				let ipTimeoutsObj = timeoutedIps[ip];
+				let timeoutSubmit = false;
+				let timeoutBook = false;
+				if (ipTimeoutsObj) {
+					if (ipTimeoutsObj.submit) {
+						timeoutSubmit = ipTimeoutsObj.submitUntil;
+					}
+					if (ipTimeoutsObj.book) {
+						timeoutBook = ipTimeoutsObj.bookUntil;
+					}
+				}
 				ws.send(
 					wsMsg(
 						"update",
 						{
+							timeouts: {submit: timeoutSubmit, book: timeoutBook},
 							bookDuration: BOOK_DURATION,
 							bookedForMe: msg.bookId === isBooked && msg.bookId != null,
 							episodes,
@@ -125,6 +211,10 @@ wss.on("connection", (ws, req) => {
 				);
 				break;
 			case "submit":
+				if (testIpTimeout(ip, "submit")) {
+					ws.send(wsErr("timeout submit"));
+					return;
+				}
 				if (!validateCharacters(msg.data) || !validateCoherency(msg.data)) {
 					ws.send(wsErr("gibberish"));
 					return;
@@ -138,10 +228,17 @@ wss.on("connection", (ws, req) => {
 				episodes.push(line);
 				db.append(line);
 				console.log("submitted", `"${line}"`);
-				ws.send(wsMsg("submitSuccess", 0));
+				ws.send(wsMsg("submitSuccess", {submit: Date.now() + config.submitTimeout, book: Date.now() + config.bookTimeout}));
 				broadcastUpdate(msg.bookId);
+
+				timeoutIp(ip, {submit: true, book: true});
+
 				break;
 			case "book":
+				if (testIpTimeout(ip, "submit") || testIpTimeout(ip, "book")) {
+					ws.send(wsErr("timeout"));
+					return;
+				}
 				if (isBooked) {
 					ws.send(wsErr("booked"));
 					return;
@@ -149,11 +246,14 @@ wss.on("connection", (ws, req) => {
 				bookedUntil = Date.now() + BOOK_DURATION;
 
 				isBooked = Math.random().toString();
-				ws.send(wsMsg("bookSuccess", isBooked));
+				ws.send(wsMsg("bookSuccess", {isBooked, timeout: Date.now() + config.bookTimeout}));
 				broadcast(wsMsg("booked", {bookedFor: BOOK_DURATION}));
 				bookedTimer = setTimeout(() => {
-					unbook();
+					unbook(ip);
 				}, BOOK_DURATION);
+
+				timeoutIp(ip, {book: true});
+
 				break;
 			// next are admin-only
 			case "admin":

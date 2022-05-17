@@ -4,9 +4,9 @@
         "book": true
     },
     "::ffff:127.0.0.1": {
-        "submit": true,
+        "submit": false,
         "book": false,
-        "submitUntil": 1652785253680,
+        "submitUntil": null,
         "bookUntil": null
     }
 }

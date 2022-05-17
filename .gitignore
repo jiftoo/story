@@ -27,3 +27,5 @@ backend/adminHash.txt
 backend/db.txt.bak
 backend/db.txt
 backend/a.txt
+backend/log.txt
+backend/ips.json

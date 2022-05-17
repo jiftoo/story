@@ -3,8 +3,8 @@
 	import ConnectingSpinner from "./lib/ConnectingSpinner.svelte";
 	import WSErrors from "./lib/WSErrors";
 
-	// const BACKEND_URL = "ws://217.15.202.178:8013/story";
-	const BACKEND_URL = "ws://localhost";
+	const BACKEND_URL = "wss://api.jiftoo.dev/story";
+	// const BACKEND_URL = "ws://localhost";
 	// const BACKEND_URL = "ws://192.168.0.200";
 
 	let userInput = "";
@@ -230,10 +230,10 @@
 					{#if isConnected}
 						<div id="counter" style="color: {counterColor}; animation-name: {vibrate}">{userInput.length} / {maxCharacters}</div>
 						{#if timeoutSubmitUntil}
-							<div>Submit timeout until {new Date(timeoutSubmitUntil).toLocaleTimeString()}</div>
+							<div>You can't submit new episodes until {new Date(timeoutSubmitUntil).toLocaleTimeString()}</div>
 						{/if}
 						{#if timeoutBookUntil}
-							<div>Book timeout {new Date(timeoutBookUntil).toLocaleTimeString()}</div>
+							<div>You can't book until {new Date(timeoutBookUntil).toLocaleTimeString()}</div>
 						{/if}
 						<button type="submit" disabled={isBooked && !bookedForMe} on:click={handleSubmit}>Submit!</button>
 						<button disabled={isBooked} on:click={() => (showBookDialog = true)}>Book</button>
